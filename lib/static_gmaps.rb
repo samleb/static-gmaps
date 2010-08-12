@@ -24,6 +24,8 @@
 require 'net/http'
 
 module StaticGmaps 
+  autoload :CGI, 'cgi'
+  
   @@version = '0.0.5'
   
   #map  
@@ -101,7 +103,7 @@ module StaticGmaps
       parameters = {}
       parameters[:size]     = "#{size[0]}x#{size[1]}"
       parameters[:map_type] = "#{map_type}"               if map_type
-      parameters[:center]   = "#{center[0]},#{center[1]}" if center
+      parameters[:center]   = format_center               if center
       parameters[:zoom]     = "#{zoom}"                   if zoom
       parameters[:markers]  = "#{markers_url_fragment}"   if markers_url_fragment
       parameters[:sensor]   = "#{sensor}"
@@ -137,17 +139,27 @@ module StaticGmaps
           @last_fetched_url = url
         end
       end
+      
+      def format_center
+        if center.is_a?(Array)
+          center.join(',')
+        elsif center.is_a?(String)
+          CGI.escape(center)
+        end
+      end
   end
 
   # http://code.google.com/apis/maps/documentation/staticmaps/index.html#Markers
   class Marker
     
-    attr_accessor :latitude,
+    attr_accessor :address,
+                  :latitude,
                   :longitude,
                   :color,
                   :alpha_character
     
     def initialize(options = {})
+      self.address         = options[:address]
       self.latitude        = options[:latitude]        || StaticGmaps::default_latitude
       self.longitude       = options[:longitude]       || StaticGmaps::default_longitude
       self.color           = options[:color]           || StaticGmaps::default_color
@@ -175,12 +187,14 @@ module StaticGmaps
     end
     
     def url_fragment
-      raise MissingArgument.new("Latitude must be set before a url_fragment can be generated for Marker.") if !latitude
-      raise MissingArgument.new("Longitude must be set before a url_fragment can be generated for Marker.") if !longitude
+      unless address
+        raise MissingArgument.new("Latitude must be set before a url_fragment can be generated for Marker.") if !latitude
+        raise MissingArgument.new("Longitude must be set before a url_fragment can be generated for Marker.") if !longitude
+      end
       x  = ""
       x += "color:#{color}|" if color
       x += "label:#{alpha_character}|" if alpha_character
-      x += "#{latitude},#{longitude}"
+      x += address ? CGI.escape(address) : "#{latitude},#{longitude}"
       return x
     end
   end

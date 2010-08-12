@@ -55,6 +55,14 @@ describe StaticGmaps do
     it 'should have a markers_url_fragment'              do @map.markers_url_fragment.should == 'color:green|label:a|10,20|color:blue|label:b|15,25' end
     it 'should include the markers_url_fragment its url' do @map.url.should include(@map.markers_url_fragment) end
   end
+  
+  describe Map, 'with center as a string address' do
+    before(:each) do
+      @map = StaticGmaps::Map.new :center => 'Montpellier, France'
+    end
+    
+    it 'should use the escaped string as center' do @map.url.should == 'http://maps.google.com/maps/api/staticmap?center=Montpellier%2C+France&map_type=roadmap&sensor=false&size=500x400&zoom=1' end
+  end
     
   describe Marker, 'initialize with no attributes' do
     before(:each) do @marker = StaticGmaps::Marker.new end
@@ -78,5 +86,13 @@ describe StaticGmaps do
     it 'should set longitude'       do @marker.longitude.should       == 34 end
     it 'should set color'           do @marker.color.should           == :red end
     it 'should set alpha_character' do @marker.alpha_character.should == :z end
+  end
+  
+  describe Marker, 'with address attribute' do
+    before(:each) do
+      @marker = StaticGmaps::Marker.new(:color => 'blue', :address => 'Tasmania, Australia')
+    end
+    
+    it 'should use the escaped string as location' do @marker.url_fragment.should == 'color:blue|Tasmania%2C+Australia' end
   end
 end
